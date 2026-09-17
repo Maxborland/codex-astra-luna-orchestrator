@@ -327,7 +327,7 @@ release_update_validate_archive() {
     if ! release_update_archive_root=$(awk '
         function invalid_path(path, n, i, part) {
             if (path == "" || path ~ /\r/ || path ~ /\\/ ||
-                path ~ /^\// || path ~ /^[A-Za-z]:[\\/]/ || path ~ /\/\//) {
+                path ~ /^\// || path ~ /^[A-Za-z]:[\/\\]/ || path ~ /\/\//) {
                 return 1
             }
             while (length(path) > 0 && substr(path, length(path), 1) == "/") {
