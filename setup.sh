@@ -126,9 +126,10 @@ select_plan() {
     printf '%s\n' '  4) Plus (max 2 subagents) - GPT-6 Luna (max) orchestrates, GPT-6 Luna (medium) executes, GPT-6 Astra (low) reviews'
     printf '%s\n' '  5) GPT6-SolMax-LunaMax - GPT-6 Sol (max) orchestrates and reviews, GPT-6 Luna (max) executes'
     printf '%s\n' '  6) GPT6-SolMedium-LunaMax - GPT-6 Sol (medium) orchestrates and reviews, GPT-6 Luna (max) executes'
+    printf '%s\n' '  7) AGR - GPT-6 Astra (high) orchestrates adaptively, GPT-6 Luna (max) executes, GPT-6 Astra (medium) reviews'
 
     while :; do
-        printf '%s' 'Select Profile [1-6] (default 1): '
+        printf '%s' 'Select Profile [1-7] (default 1): '
         if ! IFS= read -r answer; then
             printf '\nSetup cancelled: input ended before setup was complete.\n' >&2
             exit 1
@@ -141,6 +142,7 @@ select_plan() {
             4|plus-max-2-subagents) plan=plus-max-2-subagents; return ;;
             5|gpt6-SolMax-LunaMax|GPT6-SolMax-LunaMax) plan=GPT6-SolMax-LunaMax; return ;;
             6|gpt6-SolMedium-LunaMax|GPT6-SolMedium-LunaMax) plan=GPT6-SolMedium-LunaMax; return ;;
+            7|agr|AGR) plan=agr; return ;;
             *) printf '%s\n' 'Please enter a listed profile number or name.' ;;
         esac
     done

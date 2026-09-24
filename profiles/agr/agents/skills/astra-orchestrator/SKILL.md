@@ -23,6 +23,10 @@ Give each delegate the result, bounded scope, relevant context, ownership, const
 
 Do not expand scope, change public contracts, use secrets or personal data, or cause destructive or external effects without authorization. Keep review read-only. Never claim a check or agent run that did not happen.
 
+## Development work logs
+
+For every development task, including root-only work, create a factual UTC journal before implementation. Follow the repository's AGENTS.md: the root owns the index and its journal, direct writers own separate participant journals, and read-only specialists send WORK_LOG entries to the root for recording. Record start, milestones, decisions, checks, blockers, and handoff with author, status, action/result, evidence, and next step. Exclude hidden reasoning, credentials, personal data, and raw tool output; report any logging gap.
+
 ## Budgets and completion
 
 Follow explicit user or caller limits. The root chooses task-appropriate manual or automatic budget instructions when asked, and distinguishes an instruction from a runtime-enforced limit. Do not invent a hard time or token cap.

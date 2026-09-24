@@ -7,15 +7,18 @@ Setup copies `profiles/pro/codex/` to `.codex/` and
 rewriting configuration. For manual installation, copy those same folders
 and the repository's `AGENTS.md` to the target.
 
-The topology is:
+The role files provide distinct capabilities; they are not a fixed pipeline.
+Use the smallest routing that can finish the task. A worker completes a bounded
+change and focused checks; add exploration, research, or independent testing
+only when the task needs them. Require a read-only independent review for
+high-risk work.
 
 ```text
-Astra root (medium)
-├── Luna explorer (max)
-├── Luna worker (max)
-├── Luna tester (max)
-├── Luna researcher (max)
-└── Astra reviewer (low)
+Astra root
+├── worker (bounded implementation + focused checks)
+├── explorer / researcher (when facts or code paths are unclear)
+├── tester (when independent verification adds value)
+└── reviewer (required for high-risk work)
 ```
 
 Put the root settings in the project-scoped `.codex/config.toml`, or merge

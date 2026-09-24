@@ -1,0 +1,12 @@
+# Native Codex profile for Agent Graph Runtime.
+# Behavioral routing lives in the astra-orchestrator skill; model pins live here and in agents/*.toml.
+model = "gpt-6-astra"
+model_reasoning_effort = "high"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 2
+default_subagent_model = "gpt-6-luna"
+default_subagent_reasoning_effort = "max"

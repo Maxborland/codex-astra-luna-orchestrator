@@ -51,16 +51,18 @@ class SolProfileTests(unittest.TestCase):
                 skill = (
                     directory / "agents" / "skills" / "astra-orchestrator" / "SKILL.md"
                 ).read_text()
-                self.assertIn(f"root: `gpt-6-sol` at `{effort}` reasoning", skill)
-                self.assertIn(
-                    "explorer, worker, tester, researcher: `gpt-6-luna` at `max` reasoning",
-                    skill,
-                )
+                self.assertIn("Choose the smallest useful team.", skill)
+                self.assertIn("A worker owns its assigned implementation", skill)
+                self.assertNotIn("gpt-6-", skill)
 
     def test_installers_select_profiles(self):
-        installers = [("shell", ["sh", str(ROOT / "setup.sh")])]
+        installers = []
+        if shutil.which("sh"):
+            installers.append(("shell", ["sh", str(ROOT / "setup.sh")]))
         if shutil.which("pwsh"):
             installers.append(("powershell", ["pwsh", "-NoProfile", "-File", str(ROOT / "setup.ps1")]))
+        if not installers:
+            self.skipTest("No supported setup shell is available")
         choices = (
             ("5", "GPT6-SolMax-LunaMax"),
             ("6", "GPT6-SolMedium-LunaMax"),
@@ -68,6 +70,9 @@ class SolProfileTests(unittest.TestCase):
             ("GPT6-SolMedium-LunaMax", "GPT6-SolMedium-LunaMax"),
             ("gpt6-SolMax-LunaMax", "GPT6-SolMax-LunaMax"),
             ("gpt6-SolMedium-LunaMax", "GPT6-SolMedium-LunaMax"),
+            ("7", "agr"),
+            ("agr", "agr"),
+            ("AGR", "agr"),
         )
         for installer, command in installers:
             for choice, profile in choices:
@@ -76,9 +81,10 @@ class SolProfileTests(unittest.TestCase):
                         command, input=f"{target}\n{choice}\n\n\n\n", text=True, capture_output=True
                     )
                     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-                    self.assertIn("Select Profile [1-6] (default 1):", result.stdout)
+                    self.assertIn("Select Profile [1-7] (default 1):", result.stdout)
                     self.assertIn(f"profile: {profile}", result.stdout)
-                    self.assertIn(f") {profile} -", result.stdout)
+                    label = "AGR" if profile == "agr" else profile
+                    self.assertIn(f") {label} -", result.stdout)
                     source = ROOT / "profiles" / profile
                     for component in (
                         Path(".codex/config.toml"),
@@ -119,12 +125,18 @@ class PreviousProfileTests(unittest.TestCase):
                 ).read_text()
                 self.assertNotIn("gpt-5.6-luna", skill)
                 self.assertNotIn("GPT-5.6 Luna", skill)
-                self.assertIn(f"`gpt-6-luna` at `{luna_effort}` reasoning", skill)
+                self.assertIn("Choose the smallest useful team.", skill)
+                self.assertIn("A worker owns its assigned implementation", skill)
+                self.assertNotIn("gpt-6-", skill)
 
     def test_installers_select_previous_profiles(self):
-        installers = [("shell", ["sh", str(ROOT / "setup.sh")])]
+        installers = []
+        if shutil.which("sh"):
+            installers.append(("shell", ["sh", str(ROOT / "setup.sh")]))
         if shutil.which("pwsh"):
             installers.append(("powershell", ["pwsh", "-NoProfile", "-File", str(ROOT / "setup.ps1")]))
+        if not installers:
+            self.skipTest("No supported setup shell is available")
         for installer, command in installers:
             for choice, profile in enumerate(PREVIOUS_PROFILES, start=1):
                 with self.subTest(installer=installer, profile=profile), tempfile.TemporaryDirectory() as target:
@@ -146,6 +158,56 @@ class PreviousProfileTests(unittest.TestCase):
                             (Path(target) / component).read_text(),
                             (source_component / Path(*component.parts[1:])).read_text(),
                         )
+
+
+class AdaptiveProfileTests(unittest.TestCase):
+    def test_all_profiles_have_adaptive_routing_and_leaf_role_contracts(self):
+        profiles = (
+            "pro", "plus", "pro-max-2-subagents", "plus-max-2-subagents",
+            "GPT6-SolMax-LunaMax", "GPT6-SolMedium-LunaMax", "agr",
+        )
+        for profile in profiles:
+            with self.subTest(profile=profile):
+                directory = ROOT / "profiles" / profile
+                skill = (directory / "agents/skills/astra-orchestrator/SKILL.md").read_text()
+                self.assertIn("Choose the smallest useful team.", skill)
+                self.assertIn("A worker owns its assigned implementation", skill)
+                self.assertIn("Require an independent read-only reviewer", skill)
+                self.assertNotIn("gpt-6-", skill)
+                self.assertNotIn("must be delegated", skill.lower())
+                self.assertNotIn("for every delegated task", skill.lower())
+                for role in ("explorer", "researcher", "worker", "tester", "reviewer"):
+                    agent = tomllib.loads((directory / "codex/agents" / f"{role}.toml").read_text())
+                    instructions = agent["developer_instructions"]
+                    self.assertIn("spawn or assign agents", instructions)
+                    self.assertIn("Mandatory work log", instructions)
+                    if role in ("explorer", "researcher", "reviewer"):
+                        self.assertIn("WORK_LOG", instructions)
+                        self.assertIn("root records read-only participant entries", instructions)
+                    else:
+                        self.assertIn("journal ID and path assigned by the root", instructions)
+                worker = tomllib.loads((directory / "codex/agents/worker.toml").read_text())
+                self.assertIn("end to end", worker["developer_instructions"])
+                self.assertIn("focused checks", worker["developer_instructions"])
+
+    def test_agr_profile_model_pins_and_license(self):
+        directory = ROOT / "profiles" / "agr"
+        config = tomllib.loads((directory / "codex/config.toml").read_text())
+        self.assertEqual(config["model"], "gpt-6-astra")
+        self.assertEqual(config["model_reasoning_effort"], "high")
+        self.assertEqual(config["approval_policy"], "on-request")
+        self.assertEqual(config["sandbox_mode"], "workspace-write")
+        self.assertEqual(config["agents"]["max_concurrent_threads_per_session"], 2)
+        self.assertEqual(config["agents"]["default_subagent_model"], "gpt-6-luna")
+        self.assertEqual(config["agents"]["default_subagent_reasoning_effort"], "max")
+        for role in ("explorer", "researcher", "tester", "worker"):
+            agent = tomllib.loads((directory / "codex/agents" / f"{role}.toml").read_text())
+            self.assertEqual(agent["model"], "gpt-6-luna")
+            self.assertEqual(agent["model_reasoning_effort"], "max")
+        reviewer = tomllib.loads((directory / "codex/agents/reviewer.toml").read_text())
+        self.assertEqual(reviewer["model"], "gpt-6-astra")
+        self.assertEqual(reviewer["model_reasoning_effort"], "medium")
+        self.assertEqual((directory / "LICENSE").read_bytes(), (ROOT / "LICENSE").read_bytes())
 
 
 if __name__ == "__main__":

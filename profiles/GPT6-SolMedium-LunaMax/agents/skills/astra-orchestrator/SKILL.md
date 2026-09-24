@@ -1,28 +1,30 @@
 ---
 name: astra-orchestrator
-description: Orchestrate complex Codex coding work with GPT-6 Sol at medium reasoning as planner/integrator and reviewer and GPT-6 Luna at max reasoning for exploration, implementation, testing, and research. Use for multi-file features, debugging across components, repo-wide changes, parallelizable workstreams, or when the user asks to delegate. Do not use for trivial edits or simple questions.
+description: Adaptive orchestration for coding tasks that benefit from bounded delegation. Choose only the roles needed and keep implementation ownership clear.
 ---
 
-# Orchestrator — GPT-6 Sol Medium + GPT-6 Luna Max
+# Adaptive Codex Orchestrator
 
-The user's explicit instructions take precedence over this skill.
+The user's instructions and repository rules control the task. Inspect the current state and preserve unrelated work before editing.
 
-## Topology
+## Ownership and routing
 
-- root: `gpt-6-sol` at `medium` reasoning
-- explorer, worker, tester, researcher: `gpt-6-luna` at `max` reasoning
-- reviewer: `gpt-6-sol` at `medium` reasoning, in an independent read-only context
+- The root owns the outcome, scope, decisions, delegation, integration, and final acceptance. It stays accountable for completion and may handle a trivially local change directly.
+- Choose the smallest useful team. For a bounded implementation that benefits from delegation, use one capable worker first. Do not turn every task into an explorer-to-worker-to-tester-to-reviewer sequence.
+- A worker owns its assigned implementation through focused, relevant checks and a concise completion report. Do not automatically add a tester or send routine in-scope fixes back through another delegation cycle.
+- Add an explorer only when the relevant code path or constraints are unclear. Add a researcher only for external or version-specific facts that need verification.
+- Add a tester when the verification is substantial, independent, or outside the worker's practical assignment. The worker still runs the targeted checks needed to finish its own work.
+- Require an independent read-only reviewer for changes that materially affect security or privacy, money, data integrity, public contracts, or broad rollout. For lower-risk work, review only when the user asks or the expected value justifies the cost.
+- Parallelize only independent work with disjoint ownership. Honor concurrency and depth limits supplied by the caller or project configuration. Child roles are leaves and must never spawn or assign agents.
 
-The role files in `.codex/agents/` pin these models and reasoning levels; generic subagents inherit the Luna defaults in `.codex/config.toml`. Do not change the root model from within a session.
+## Delegation contract
 
-## Delegation
+Give each delegate the result, bounded scope, relevant context, ownership, constraints, and observable acceptance criteria. The worker should complete the assignment, run focused checks, and report changed files, results, gaps, and risks. Stop for a real blocker or a decision outside the brief; report the facts, consequences, options, recommendation, and exact decision needed. Do not return routine implementation to the root just to restart the same loop.
 
-The root owns architecture, task breakdown, integration, and final verification. Keep genuinely small tasks root-only. For work spanning multiple files, independent workstreams, cross-component debugging, or useful independent review, delegate bounded tasks to specialized agents when available. If required delegation is unavailable, report that rather than claiming it happened.
+Do not expand scope, change public contracts, use secrets or personal data, or cause destructive or external effects without authorization. Keep review read-only. Never claim a check or agent run that did not happen.
 
-For each delegated task, specify the objective, scope, context, constraints, deliverable, and acceptance criteria. When spawning, select the named role and its pinned model; do not silently replace a Luna worker with the root. Use explorer for mapping code, worker for implementation, tester for verification, researcher for version-specific facts, and reviewer for independent post-change review. Do not let multiple workers edit the same files without explicit ownership boundaries.
+## Budgets and completion
 
-Run independent tasks in parallel and serialize dependent work. Prefer exploration, architecture decision, bounded implementation, targeted testing, independent review when useful, then integration and final verification. Do not spawn every role mechanically. Report agent failures and resolve material findings before finishing.
+Follow explicit user or caller limits. The root chooses task-appropriate manual or automatic budget instructions when asked, and distinguishes an instruction from a runtime-enforced limit. Do not invent a hard time or token cap.
 
-## Verification
-
-Inspect the final diff, verify requested behavior, run relevant tests, and state any validation that could not be performed. Never claim a subagent was used unless it was actually spawned.
+The root inspects the actual final changes, resolves material findings, runs any remaining acceptance checks, and reports the visible behavior, evidence, and unrun checks. User overrides take precedence over this workflow.

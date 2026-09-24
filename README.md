@@ -5,30 +5,23 @@ GPT-6 Luna execution subagents, and an independent reviewer.
 
 ## Orchestration topology
 
-The diagram shows the Astra (Pro) and Sol orchestrators. Plus uses a Luna
-root, as shown in the profile table below. Execution roles use GPT-6 Luna;
-the reviewer uses Astra for Pro/Plus and Sol for Sol profiles.
+Profiles configure the root and role models; routing is adaptive. The root
+chooses only the specialists a task needs. A worker owns a bounded change and
+its focused checks. A read-only reviewer is required for high-risk work.
 
 ```text
-              GPT-6 Astra / Sol
-             root / orchestrator
-                      |
-      +---------------+---------------+
-      |               |               |
-   explorer          worker         researcher
-  GPT-6 Luna       GPT-6 Luna       GPT-6 Luna
-      |               |
-      +-------+-------+
-              |
-           tester
-         GPT-6 Luna
-              |
-          reviewer
-      GPT-6 Astra / Sol
-              |
-              v
-           root agent
-      integrate + verify
+                 root / orchestrator
+                         |
+       +-----------------+-----------------+
+       |                 |                 |
+     worker      explorer / researcher   reviewer
+       |              as needed        high-risk or
+ focused checks                       requested
+       |
+       +------- tester when independent
+                verification is useful
+                         |
+                    root integrates
 ```
 
 ## Setup
@@ -66,7 +59,7 @@ the reviewer uses Astra for Pro/Plus and Sol for Sol profiles.
 
    ```text
    Target repository path: ../my-project
-   Select Profile [1-6] (default 1): 5
+   Select Profile [1-7] (default 1): 5
    ```
 
 The installer copies the selected configuration to `.codex/`, its skill to
@@ -114,8 +107,9 @@ it explicitly:
 
 ```text
 $astra-orchestrator
-Implement the invoice export endpoint. Use the explorer to map the path,
-a worker to implement it, and the tester and reviewer to verify it.
+Implement the invoice export endpoint. Choose the smallest useful delegation;
+have the worker finish implementation and focused checks. Add specialists only
+when uncertainty, independent verification, or risk calls for them.
 ```
 
 The skill keeps the `astra-orchestrator` name in every profile so the shared
@@ -131,6 +125,7 @@ The skill keeps the `astra-orchestrator` name in every profile so the shared
 | 4 | `plus-max-2-subagents` | Luna max | Luna medium | Astra low | 2 |
 | 5 | `GPT6-SolMax-LunaMax` | Sol max | Luna max | Sol max | 4 |
 | 6 | `GPT6-SolMedium-LunaMax` | Sol medium | Luna max | Sol medium | 4 |
+| 7 | `agr` | Astra high | Luna max | Astra medium | 2 |
 
 All models above are GPT-6. Execution roles are explorer, worker, tester,
 and researcher; named roles pin their models and reasoning levels independently
@@ -155,7 +150,8 @@ settings.
 │   ├── pro-max-2-subagents/
 │   ├── plus-max-2-subagents/
 │   ├── GPT6-SolMax-LunaMax/
-│   └── GPT6-SolMedium-LunaMax/
+│   ├── GPT6-SolMedium-LunaMax/
+│   └── agr/
 ├── guides/
 ├── scripts/
 │   └── token_usage.py
@@ -170,7 +166,8 @@ settings.
 ```
 
 Each profile contains `codex/config.toml`, `codex/agents/*.toml`, and
-`agents/skills/astra-orchestrator/SKILL.md`.
+`agents/skills/astra-orchestrator/SKILL.md`. The `agr` profile also bundles
+the repository's Apache-2.0 `LICENSE`.
 
 ## Guides
 
